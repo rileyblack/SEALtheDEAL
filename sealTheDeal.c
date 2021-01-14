@@ -31,10 +31,10 @@ typedef struct account{
  * Generic deposit/withdraw/transfer
  */
 typedef struct operation{
-        int id_incoming;	//if operation involves money going into an account, this is id of that account
-        int id_outgoing;	//if operation involves money going out of an account, this is id of that account
-        int amount;			//amount being moved
-        int operation_type; //1 = deposit, 2 = withdraw, 3 = transfer, -1 = undefined
+        int id_incoming;		//if operation involves money going into an account, this is id of that account
+        int id_outgoing;		//if operation involves money going out of an account, this is id of that account
+        int amount;				//amount being moved
+        int operation_type;		//1 = deposit, 2 = withdraw, 3 = transfer, -1 = undefined
 } Operation;
 
 /*
@@ -82,36 +82,30 @@ Account * accounts;		//shared accounts between threads
 pthread_mutex_t lock;	//mutex lock
 
 int main(){
-        /*
+		/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------
          * File extraction portion of the code is below, following this methodology:
          *
-         * 1. Open the file, and determine the amount of account lines, depositor lines, and client lines,
-         *    and hold integer value in respective variables
-         * 2. Dynamically create two arrays, one for depositors and one for clients, of the size of the
-         *    number of respective lines for each
-         * 3. Reopen the file, and count the number of operations that each depositor/client line has,
-         *    and populate the array with that integer value at the index representing that depositor/
-         *    client line (ie. client_array[0] hold number of operations in first client line in input file)
-         * 4. Dynamically create three arrays, one for accounts, one for depositors and one for clients, of
-         *    the size of the number of respective lines for each
-         * 5. Reopen the file, and parse through the file for the critical values in each type of line, and
-         *    create an account/depositor/client struct with the attrbutes specified in the input file, and
-         *    place struct in respective array at proper index (ie. accounts[1] has the first account info
-         *    in the input file
-         * 6. Once concluded, should have three arrays accounts[], depositors[], and clients[] that are the
-         *    dynamic size of the amount of account/depositors/clients specified in the input file, with
-         *    each element in each array containing the information needed
+         * 1. Open the file, and determine the amount of accounts, depositors, and clients specified by input file
+         * 2. Reopen the file, and count the number of operations that each depositor/client has
+         * 3. Dynamically create arrays for accounts, depositors, clients that are the size counted in part 1 and part 2 (attribute of depositor/client is dynamic array of operations)
+         * 5. Reopen the file, parse through the file, and populate the above arrays with data
+		 *-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
          */
 
         FILE * file_ptr = NULL;
-        char character; //generic character used to read in characters from the file that do not need to be saved
-        char string[1024]; //generic string used to read in strings from the file that do not need to be saved
+        char character;			//generic character used to read in characters from the file that do not need to be saved
+        char string[1024];		//generic string used to read in strings from the file that do not need to be saved
 
-        file_ptr = fopen("assignment_3_input_file.txt", "r");
-        if (file_ptr == NULL) { //check if file was opened without error
-                printf("\n\nError opening file.\n\n"); //if an error occured, print error message and end program
-                exit(0);
-        }
+		file_ptr = fopen("assignment_3_input_file.txt", "r");
+		if (file_ptr == NULL) { //check if file was opened without error
+			printf("\n\nError opening file.\n\n"); //if an error occured, print error message and end program
+			exit(0);
+		}
+
+		/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		* COUNTING ACCOUNTS
+		*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		*/
 
         int total_accounts = 0; //variable to hold the number of accounts specified by the input file
 
@@ -146,6 +140,11 @@ int main(){
                 return 0;
         }
 
+		/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		* COUNTING DEPOSITORS
+		*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		*/
+
         int total_depositors = 0; //variable to hold the number of initial depositers specified by the input file
 
         while((character != EOF)&&(character != 'd')){ //find first 'd' character (from dep)  after account lines indicating deposit info is starting
@@ -177,6 +176,11 @@ int main(){
                 return 0;
         }
 
+		/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		* COUNTING CLIENTS
+		*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		*/
+
         int total_clients = 0; //variable to hold the number of clients specified by the input file
 
         while((character != EOF)&&(character != 'c')){ //find first 'c' character indicating client info is starting
@@ -205,6 +209,11 @@ int main(){
         }
 
         fclose(file_ptr); //close file
+
+		/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		* COUNTING OPERATIONS PER DEPOSITOR AND OPERATIONS PER CLIENT
+		*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		*/
 
         int * depositor_operation_count = malloc(sizeof(int) * total_depositors); //array of integers that will hold that number of operations that
                                                                                   //each depositer has, for example depositer_operation_count[0] = 2 means
@@ -282,9 +291,19 @@ int main(){
 
         fclose(file_ptr); //close file
 
+		/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		* CREATING DYNAMIC ARRAYS FOR ACCOUNT, DEPOSITOR, AND CLIENT DATA
+		*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		*/
+
         accounts = malloc(sizeof(Account) * total_accounts);					//array of accounts
         Requestor * depositors = malloc(sizeof(Requestor) * total_depositors);	//array of depositors
         Requestor * clients = malloc(sizeof(Requestor) * total_clients);		//array of clients
+
+		/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		* POPULATING ACCOUNT ARRAY
+		*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		*/
 
         int account_id = 0; //variable to keep track of account number
 
@@ -480,6 +499,10 @@ int main(){
         }
         */
 
+		/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		* POPULATING DEPOSITOR ARRAY
+		*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		*/
 
         depositor_id = 0; //reset depositor id
 
@@ -497,6 +520,8 @@ int main(){
                         printf("\n\nInput file is not in correct format2.\n\n"); //if not a number, then input file format is wrong
                         return 0;
                 }
+
+				// POPULATING DEPOSITOR OPERATIONS ATTRIBUTE ARRAY ---------------------------------------------------------------------------------------------------------------
 
                 int operation_id = 0;		//variable to keep track of operation number of depositor
                 int deposit_account_number; //variable to hold the id of the account the deposit is going into
@@ -569,6 +594,11 @@ int main(){
         }
         */
 
+		/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		* POPULATING CLIENT ARRAY
+		*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		*/
+
         client_id = 0; //reset client counter
 
         int client_number; //variable to hold the depositor number of the current depositor in question
@@ -584,12 +614,13 @@ int main(){
                         return 0;
                 }
 
+				// POPULATING CLIENT OPERATIONS ATTRIBUTE ARRAY ------------------------------------------------------------------------------------------------------------------
+
                 int operation_id = 0;			//variable to keep track of operation number
                 int incoming_account_number;	//variable to hold the id of the account the money is going into
                 int outgoing_account_number;	//variable to hold the id of the account the money is coming from
                 int amount;						//variable to hold the amount of the current operation in questiond
                 int type;						//variable to hold the type of the current opertion in question
-
 
                 character = fgetc(file_ptr); //retrieve next character
 
@@ -703,10 +734,10 @@ int main(){
         }
         */
 
-        /*
-         * This part of the code uses the populated data structures depositors[] and clients[] to create threads to process requests, then terminates the
-         * threads and deallocates the dynamic memory
-         */
+		/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		 * This part of the code creates thread processing requests using the populated data structures, then terminates the threads and deallocates the dynamic memory
+		 *-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		 */
         int err_thread;
 
         pthread_t depositor_threads[total_depositors]; //thread for each depositor
